@@ -30,10 +30,10 @@ battery-soc-modelling/
 This project requires Python 3.9+. To ensure a clean workspace and avoid system package conflicts (especially if you are running this on Arch Linux or similar distributions), it is highly recommended to use a virtual environment.
 
 1. **Clone the repository:**
-   \`\`\`bash
+   
    git clone [https://github.com/Saurx9611/battery-soc-modelling.git](https://github.com/Saurx9611/Battery_Soc)
    cd battery-soc-modelling
-   \`\`\`
+   
 
 2. **Create and activate a virtual environment:**
    \`\`\`bash
