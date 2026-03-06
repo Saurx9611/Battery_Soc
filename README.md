@@ -31,7 +31,7 @@ This project requires Python 3.9+. To ensure a clean workspace and avoid system 
 
 1. **Clone the repository:**
    \`\`\`bash
-   git clone https://github.com/Saurx9611/battery-soc-modelling.git
+   git clone [https://github.com/Saurx9611/battery-soc-modelling.git](https://github.com/Saurx9611/Battery_Soc)
    cd battery-soc-modelling
    \`\`\`
 
