@@ -30,10 +30,10 @@ battery-soc-modelling/
 This project requires Python 3.9+. To ensure a clean workspace and avoid system package conflicts (especially if you are running this on Arch Linux or similar distributions), it is highly recommended to use a virtual environment.
 
 1. **Clone the repository:**
-   \`\`\`bash
-   git clone https://github.com/Saurx9611/battery-soc-modelling.git
+   
+   git clone [https://github.com/Saurx9611/battery-soc-modelling.git](https://github.com/Saurx9611/Battery_Soc)
    cd battery-soc-modelling
-   \`\`\`
+   
 
 2. **Create and activate a virtual environment:**
    \`\`\`bash
@@ -51,7 +51,6 @@ This project requires Python 3.9+. To ensure a clean workspace and avoid system 
 Because battery cycle data is massive, raw data is **not** tracked in this repository. 
 
 1. [cite_start]Download the **Randomized Battery Dataset** from the NASA repository[cite: 659]. (Note: `src/data_ingestion.py` can fetch this automatically via API).
-2. [cite_start]Download the **LG M50T Cycle Ageing Data** from Zenodo[cite: 658]. Place the `.mpr` files directly into `data/raw/`.
 3. Do not manually convert the data. The pipeline will automatically process these files, apply a 500-second rolling window and 5-point stencil derivative, and save them as highly optimized `.parquet` files in `data/processed/` to prevent I/O bottlenecks.
 
 ## Execution
