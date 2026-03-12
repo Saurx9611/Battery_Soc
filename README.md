@@ -1,6 +1,6 @@
 # Automated Workflow for Li-Ion Cell Modeling 🔋
 
-**Author:** Saurav Shekhar | IIT Kharagpur  
+**Author:** NamoFans | IIT Kharagpur  
 **Course:** ES60208 - Rechargeable Battery Performance Modelling  
 
 ## Overview
@@ -31,7 +31,7 @@ This project requires Python 3.9+. To ensure a clean workspace and avoid system 
 
 1. **Clone the repository:**
    
-   git clone [https://github.com/Saurx9611/battery-soc-modelling.git](https://github.com/Saurx9611/Battery_Soc)
+   git clone [https://github.com/Saurx9611/Battery_Soc.git](https://github.com/Saurx9611/Battery_Soc)
    cd battery-soc-modelling
    
 
