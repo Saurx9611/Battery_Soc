@@ -1,66 +1,53 @@
-# Automated Workflow for Li-Ion Cell Modeling 🔋
+# Rechargeable Battery Performance Modelling
 
-**Author:** NamoFans | IIT Kharagpur  
-**Course:** ES60208 - Rechargeable Battery Performance Modelling  
+## Project Overview
+This project provides an automated workflow to estimate the open-circuit voltage (OCV) versus the state of charge (SOC) of Lithium-ion cells. It identifies equivalent-circuit model (ECM) parameters from relaxation data and implements a robust real-time SOC estimator. The primary goal is to achieve an SOC estimation error of 5% or less across various operating profiles by processing raw charge, discharge, and impedance laboratory data.
 
-## Overview
-This repository contains a comprehensive computational workflow designed to estimate lithium-ion battery performance. The pipeline automatically extracts the thermodynamic Open-Circuit Voltage (OCV) versus State of Charge (SOC) relationship, identifies time-varying Equivalent-Circuit Model (ECM) parameters, and deploys an Extended Kalman Filter (EKF) for real-time state estimation. 
+## Setup Details
+1. Clone the repository and navigate to the project directory.
+2. It is recommended to create and activate a Python virtual environment.
+3. Install the required dependencies using pip.
 
-[cite_start]The primary objective is to maintain a rigorous SOC estimation error of $\le 5\%$ across highly dynamic operating profiles[cite: 656].
+```bash
+pip install -r requirements.txt
+```
 
-## Repository Structure
-\`\`\`text
-battery-soc-modelling/
-├── data/
-│   ├── raw/                  # Store raw .mpr and NASA datasets here
-│   └── processed/            # Automated .parquet columnar outputs
-├── src/
-│   ├── __init__.py
-│   ├── data_ingestion.py     # Feature engineering and dataset parsing
-│   ├── ocv_extractor.py      # IC-GITT and pseudo-OCV mathematical alignment
-│   ├── ecm_fitter.py         # Boundary-constrained 1-RC parameter optimization 
-│   └── soc_estimator.py      # Extended Kalman Filter and Evaluation Metrics
-├── notebooks/                # Jupyter notebooks for EDA and validation
-├── requirements.txt          # Python dependencies
-├── run_pipeline.py           # Master execution script
-└── README.md
-\`\`\`
+## Requirements
+* Python 3.12+
+* pandas
+* numpy
+* scipy
+* matplotlib
+* scikit-learn
+* pybamm
 
-## Setup & Installation
-This project requires Python 3.9+. To ensure a clean workspace and avoid system package conflicts (especially if you are running this on Arch Linux or similar distributions), it is highly recommended to use a virtual environment.
+## Metadata
+* **Course/Assignment:** ES60208
+* **Input Data:** Experimental charge/discharge tests (e.g., 0.1C discharge, GITT 0.5C discharge data)
+* **Deliverables:** OCV-SOC models, ECM parameter identification scripts, real-time EKF SOC estimator.
 
-1. **Clone the repository:**
-   
-   git clone [https://github.com/Saurx9611/Battery_Soc.git](https://github.com/Saurx9611/Battery_Soc)
-   cd battery-soc-modelling
-   
+<details>
+<summary>Detailed Solution and Methodology</summary>
 
-2. **Create and activate a virtual environment:**
-   \`\`\`bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows use: venv\Scripts\activate
-   \`\`\`
+### 1. Data Ingestion and Processing
+The raw data comes in CSV format from laboratory battery tests containing time, voltage, current, charge capacity, and temperature measurements. I processed the data by renaming the columns to standardized constants and converting units where necessary (e.g., mA to A). I calculated the initial true State of Charge (SOC) through Coulomb counting, which tracks the integral of the current over time against the total measured cell capacity.
 
-3. **Install dependencies:**
-   \`\`\`bash
-   pip install -r requirements.txt
-   \`\`\`
-   *(Required libraries: `pandas`, `numpy`, `scipy`, `lmfit`, `prog_models`, `galvani`, `pyarrow`)*
+### 2. OCV-SOC Curve Extraction
+I derived the Open Circuit Voltage (OCV) versus State of Charge (SOC) curve using two primary approaches:
+* **Reference Data via PyBaMM:** I utilized the `pybamm` library alongside the "Chen2020" parameter set to extract the theoretical Open Circuit Potentials (OCP) for both the positive (NMC811) and negative (Graphite/Silicon composite) electrodes.
+* **Experimental Data (Pseudo-OCV):** I processed a low-rate 0.1C discharge test. Because the applied current is very small, the measured terminal voltage closely approximates the true OCV. The capacity was mapped to an SOC ranging from 100% to 0%, providing a continuous lookup curve. I also extracted static OCV points dynamically from the relaxation periods of the Galvanostatic Intermittent Titration Technique (GITT) dataset.
 
-## Data Management
-Because battery cycle data is massive, raw data is **not** tracked in this repository. 
+### 3. ECM Parameter Identification
+I modeled the battery using a 1RC Equivalent Circuit Model (ECM). The parameters — ohmic resistance (R0), polarization resistance (R1), and polarization capacitance (C1) — were identified dynamically from the GITT 0.5C discharge data:
+* The algorithm parses the dataset to pinpoint relaxation periods where the current abruptly drops to zero.
+* **R0 Calculation:** The instantaneous voltage drop immediately following the current cut-off was divided by the current magnitude to calculate the immediate ohmic resistance (R0).
+* **R1 and C1 Calculation:** I applied a non-linear exponential curve fit using `scipy.optimize.curve_fit` to the voltage recovery curve during the long relaxation phases. By fitting the equation `V(t) = V_inf - b * exp(-t/tau)`, I extracted the time constant (`tau`). This time constant was then used alongside the voltage asymptote to compute R1 and C1.
 
-1. [cite_start]Download the **Randomized Battery Dataset** from the NASA repository[cite: 659]. (Note: `src/data_ingestion.py` can fetch this automatically via API).
-3. Do not manually convert the data. The pipeline will automatically process these files, apply a 500-second rolling window and 5-point stencil derivative, and save them as highly optimized `.parquet` files in `data/processed/` to prevent I/O bottlenecks.
+### 4. Real-time SOC Estimator (Extended Kalman Filter)
+To estimate the SOC accurately in real-time, I implemented an Extended Kalman Filter (EKF) class:
+* **State Vector:** The EKF tracks the internal state of the battery, which includes the SOC and the polarization voltage (V1).
+* **Prediction Step (Time Update):** The algorithm uses Coulomb counting and the discrete-time 1RC ECM to project the next SOC and V1 based on the measured current and the time elapsed.
+* **Correction Step (Measurement Update):** The filter estimates the expected terminal voltage using the OCV-SOC lookup interpolator and the internal state. It then compares this estimated voltage against the actual sensor-measured voltage. The residual difference is multiplied by the dynamically computed Kalman Gain to correct the predicted SOC.
+* **Evaluation:** When tested against the true Coulomb-counted SOC, the final EKF model demonstrated excellent tracking. It yielded an SOC Mean Absolute Error (MAE) of 0.53% and a Voltage Root Mean Square Error (RMSE) of 0.0041 V, successfully meeting the project's target accuracy of ≤ 5%.
 
-## Execution
-To run the end-to-end pipeline—from simulated data ingestion to final SOC error metric evaluation—simply execute the master script:
-
-\`\`\`bash
-python run_pipeline.py
-\`\`\`
-
-The console will output the identified $R_0$, $R_1$, and $C_1$ parameters, the deployable OCV polynomial coefficients, and the final RMSE and MAE tracking metrics for the Extended Kalman Filter. 
-
-## Future Extensions
-While the current EKF meets the $\le 5\%$ error threshold utilizing the strictly bounded `lmfit` optimization, future iterations of this codebase could integrate an XGBoost regression model to dynamically update the physical ECM parameters in real-time as the battery ages, offering even greater robustness under extreme thermal variations.
+</details>
